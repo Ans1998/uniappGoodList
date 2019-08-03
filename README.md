@@ -1,2 +1,2 @@
 ##### 效果图
-![项目演示](https://github.com/Aliceco/reactExercise/blob/master/public/img/1wnO21GKg4.gif)
+![项目演示](https://github.com/Aliceco/uniappGoodList/blob/master/1LHRVcl4yR.gif)
