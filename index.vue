@@ -9,21 +9,47 @@
   width:50px;
   height: 50px;
   border-radius: 100%;
-  float: right;
-  
-  /* display: inline-block; */
-  /* position: absolute;
-  top: 100px; */
-  /* background-color: red; */
 }
- 
+/* 购物车动画 */
+.shoppingCartAnimations {
+	animation: shoppingCartAnimation 1s;
+}
+@keyframes shoppingCartAnimation {
+    0% {
+        opacity: 0;
+        transform: scale3d(.3,.3,.3)
+    }
+
+    20% {
+        transform: scale3d(1.1,1.1,1.1)
+    }
+
+    40% {
+        transform: scale3d(.9,.9,.9)
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale3d(1.03,1.03,1.03)
+    }
+
+    80% {
+        transform: scale3d(.97,.97,.97)
+    }
+
+    to {
+        opacity: 1;
+        transform: scaleX(1)
+    }
+}
+
 .but {
 	margin: 10px;
 	height: 60px;
 	width: 80px;
 	display: flex;
 }
- 
+
 .ball {
 	height: 40px;
 	width: 40px;
@@ -31,9 +57,38 @@
 	border-radius: 50%;
 	position: fixed;
 }
+
+/* 从右到左 */
+.delRightShoppingCardAnimations {
+	animation: delRightShoppingCardAnimation .5s;
+}
+@keyframes delRightShoppingCardAnimation {
+	from {
+		transform: translateX(100px) rotate(900deg);
+		animation-timing-function: linear;
+	}
+	to {
+	    transform: translateX(0px) rotate(0);
+		
+	}
+}
+/* 从左到右 */
+.delLeftShoppingCardAnimations {
+	animation: delLeftShoppingCardAnimation .5s;
+}
+@keyframes delLeftShoppingCardAnimation {
+	from {
+		transform: translateX(0px) rotate(0);
+	}
+	to {
+	    transform: translateX(100px) rotate(900deg);
+	    animation-timing-function: linear;
+	}
+}
 </style>
 <template>
 	<view id="test">
+		
 		<view>
 			
 			<!-- 头部 -->
@@ -60,8 +115,18 @@
 								<view>
 									<text>{{item.name}}</text>
 								</view>
-								<view>
-									<view class="item bg-blue" @click="addShoppingCard"></view>
+								<view class="flex justify-end text-center text-content">
+									<view class="item bg-blue"  
+									:class="rightListSum[index].delAnimation ? 'delRightShoppingCardAnimations' : 'delLeftShoppingCardAnimations'" 
+					 v-if="rightListSum[index].showDel" @click="delShoppingCard(index)">
+										<text>-</text>
+									</view>
+									<view style="width: 60upx;" v-if="rightListSum[index].showDel">
+										<text>{{rightListSum[index].sum}}</text>
+									</view>
+									<view class="item bg-blue" :data-index="index" @click="addShoppingCard">
+										<text>+</text>
+									</view>
 								</view>
 							</view>
 							<view class="gray_big_line"></view>
@@ -77,18 +142,29 @@
 			</view>
 			
 			<!-- 底部导航栏 -->
-			<view style="position: fixed; bottom: 10px; background-color: red; height: 40px; width: 100%;">
-				<view style="margin-left: 50px;line-height: 40px;">购物车</view>
+			<view style="position: fixed; bottom: 0; height: 85upx; width: 100%; background-color: #CCCCCC;">
+				<view v-if="showShoppingCart" :class="shoppingCartAnimation? 'shoppingCartAnimations' : '' " style="margin-left: 24upx;width: 85upx;height: 85upx; border-radius: 100%;background-color: red;">
+					
+				</view>
 			</view>
 			
 		</view>
 	</view>
 </template>
- 
+
 <script>
 	export default {
 		data() {
 			return {
+				rightListSum: [
+					{
+						showDel: false,
+						delAnimation: false, // 删除动画
+						sum: 0,
+					}
+				],
+				showShoppingCart: true, // 购物车显示
+				shoppingCartAnimation: false, // 购物车动画
 				showBall: false, // 小球是否显示
 				animationY: '', // 动画Y
 				animationX: '', // 动画X
@@ -154,16 +230,38 @@
 		},
 		onLoad(option) {
 			console.log('onLoad')
+			this.calculateHeight()
 		},
 		onReady() {
-			this.calculateHeight()
+			// 接口返回
+			// this.calculateHeight()
 		},
 		onShow() {
 		},
 		methods: {
+			// 删除购物车
+			async delShoppingCard(index) {
+				console.log(index)
+				if (this.rightListSum[index].sum-1 <= 0) {
+					this.rightListSum[index].sum = this.rightListSum[index].sum - 1
+					
+					this.rightListSum[index].delAnimation = false
+					
+					this.setDelayTime(100).then(() => {
+						this.rightListSum[index].showDel = false
+					})
+					
+				} else {
+					this.rightListSum[index].sum = this.rightListSum[index].sum - 1
+				}
+			},
 			// 添加购物车
 			addShoppingCard(e){
 				console.log(e)
+				let index = e.currentTarget.dataset.index
+				this.rightListSum[index].sum = this.rightListSum[index].sum + 1
+				this.rightListSum[index].delAnimation = true
+				this.rightListSum[index].showDel = true
 				// x, y表示手指点击横纵坐标, 即小球的起始坐标
 				let ballX = e.detail.x,
 					ballY = e.detail.y;
@@ -197,8 +295,12 @@
 							this.animationX = this.flyX(0, 0, 0).export(); // 执行动画X
 							this.animationY = this.flyY(0, 0, 0).export(); // 执行动画Y
 							this.showBall = false; // 隐藏小球
+							this.shoppingCartAnimation =  true // 购物车动画
+							// 400ms延时, 即小球的抛物线时长
+							return this.setDelayTime(400);
+						}).then(() => {
+							this.shoppingCartAnimation =  false // 购物车动画
 						})
-					
 						
 					}
 				})
@@ -279,8 +381,16 @@
 					  res.end = tabHeight // 结束高度
 					  this.listHeight.push(res)
 					}).exec();
+					
+					let rightListSum = {
+						showDel: false,
+						delAnimation: false, // 删除动画
+						sum: 0,
+					}
+					this.rightListSum.push(rightListSum)
 				}
 				console.log(this.listHeight)
+				console.log(this.rightListSum)
 				// let view = uni.createSelectorQuery().select("#main-" + 5);
 				// console.log(view)
 				// view.fields({
